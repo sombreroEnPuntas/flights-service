@@ -7,6 +7,7 @@ Uses Nest.js/TypeScript starter repository.
 
 A `fights` module is available, it just uses axios to request flights from all sources.
 It merges and de-duplicates results before returning.
+Each individual "source" is cached for one hour in-memory.
 
 ## Installation
 

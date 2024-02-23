@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import { HttpService } from '@nestjs/axios'
 import { firstValueFrom, catchError, timeout, retry } from 'rxjs'
+import { CacheTTL, CacheKey, CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Cache } from 'cache-manager'
 
 import { Flight } from './interfaces/flight'
 import { sources } from './data/sources'
@@ -8,7 +10,10 @@ import { Source } from './interfaces/source'
 
 @Injectable()
 export class FlightsService {
-  constructor(readonly httpService: HttpService) {}
+  constructor(
+    readonly httpService: HttpService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   async fetchFromAllSources(): Promise<Flight[]> {
     const requests: Promise<Flight[]>[] = []
@@ -22,7 +27,16 @@ export class FlightsService {
     return flights
   }
 
+  @CacheTTL(3600000) // Cache for 1 hour
+  @CacheKey('flights-source') // Cache key
   async getFlightFromSource(source: Source): Promise<Flight[]> {
+    const cachedFlight: Flight[] = await this.cacheManager.get(
+      'source:' + source.id,
+    )
+    if (cachedFlight) {
+      return cachedFlight
+    }
+
     const { data } = await firstValueFrom<{ data: any }>(
       this.httpService.get(source.url).pipe(
         retry(3),
@@ -37,7 +51,9 @@ export class FlightsService {
       ),
     )
 
-    return source.dataMapping(data)
+    const flights = source.dataMapping(data)
+    await this.cacheManager.set('source:' + source.id, flights, 3600000) // Cache for 1 hour
+    return flights
   }
 
   private mergeAndRemoveDuplicates(list: Flight[][]): Flight[] {

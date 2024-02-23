@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { HttpModule, HttpService } from '@nestjs/axios'
+import { CacheModule } from '@nestjs/cache-manager'
 import { AxiosResponse } from 'axios'
 import { of } from 'rxjs'
 
@@ -14,7 +15,7 @@ describe('FlightsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [HttpModule],
+      imports: [HttpModule, CacheModule.register()],
       controllers: [FlightsController],
       providers: [FlightsService],
     }).compile()
