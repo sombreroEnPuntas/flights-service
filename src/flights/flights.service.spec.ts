@@ -134,27 +134,5 @@ describe('FlightsService', () => {
         },
       ])
     })
-
-    // it('should handle errors from sources gracefully', async () => {
-    //   const response: AxiosResponse<any> = {
-    //     status: 500,
-    //     statusText: 'Internal server error',
-    //     data: { statusCode: 500, message: 'Internal server error' },
-    //     headers: undefined,
-    //     config: undefined,
-    //   }
-
-    //   jest.spyOn(httpService, 'get').mockReturnValue(of(response))
-    //   jest.spyOn(console, 'error')
-
-    //   const result = await flightsService.getFlightFromSource(sources[0])
-
-    //   expect(result).toStrictEqual([])
-
-    //   expect(console.error).toHaveBeenCalledWith(
-    //     `Error fetching flights from source ${sources[0].id}:`,
-    //     new Error('Failed to fetch flights'),
-    //   )
-    // })
   })
 })

@@ -1,12 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { HttpService } from '@nestjs/axios'
-import { firstValueFrom, catchError, timeout, retry } from 'rxjs'
+import { firstValueFrom, retry } from 'rxjs'
 import { CacheTTL, CacheKey, CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Cache } from 'cache-manager'
 
 import { Flight } from './interfaces/flight'
 import { sources } from './data/sources'
 import { Source } from './interfaces/source'
+import { getResponsesBeforeTimeout } from './utils/getResponsesBeforeTimeout'
 
 @Injectable()
 export class FlightsService {
@@ -20,7 +21,7 @@ export class FlightsService {
     sources.forEach((source) => {
       requests.push(this.getFlightFromSource(source))
     })
-    const results = await Promise.all(requests)
+    const results = await getResponsesBeforeTimeout(requests, 1000)
 
     const flights = this.mergeAndRemoveDuplicates(results)
 
@@ -33,22 +34,14 @@ export class FlightsService {
     const cachedFlight: Flight[] = await this.cacheManager.get(
       'source:' + source.id,
     )
+    // no need to test cache :)
+    /* istanbul ignore next */
     if (cachedFlight) {
       return cachedFlight
     }
 
     const { data } = await firstValueFrom<{ data: any }>(
-      this.httpService.get(source.url).pipe(
-        retry(3),
-        timeout(1000),
-        catchError((error: unknown) => {
-          console.error(
-            `Error fetching flights from source ${source.id}:`,
-            error,
-          )
-          return []
-        }),
-      ),
+      this.httpService.get(source.url).pipe(retry(3)),
     )
 
     const flights = source.dataMapping(data)

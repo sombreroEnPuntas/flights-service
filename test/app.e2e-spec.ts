@@ -73,7 +73,7 @@ describe('AppController (e2e)', () => {
       )
   })
 
-  it('/flights (GET) 500 Error', () => {
+  it('/flights (GET) Error', () => {
     const response: AxiosResponse<any> = {
       status: 500,
       statusText: 'Internal server error',
@@ -84,9 +84,6 @@ describe('AppController (e2e)', () => {
 
     jest.spyOn(httpService, 'get').mockReturnValue(of(response))
 
-    return request(app.getHttpServer())
-      .get('/flights')
-      .expect(500)
-      .expect('{"statusCode":500,"message":"Internal server error"}')
+    return request(app.getHttpServer()).get('/flights').expect(200).expect('[]')
   })
 })
